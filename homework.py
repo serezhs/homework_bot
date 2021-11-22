@@ -29,17 +29,17 @@ HOMEWORK_STATUSES = {
 
 
 def send_message(bot, message):
-    """Отправляет сообщение в телеграм"""
+    """Отправляет сообщение в телеграм."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logging.info('Сообщение отправлено')
-    except:
-        logging.error('Сообщение не отправилось :(')
-        
+    except Exception as error:
+        logging.error(error)
+        raise Exception('Не удалось отправить сообщение')
 
 
 def get_api_answer(current_timestamp):
-    """Делает запрос к единственному эндпоинту API-сервиса"""
+    """Делает запрос к единственному эндпоинту API-сервиса."""
     timestamp = current_timestamp
     params = {'from_date': timestamp}
 
@@ -47,33 +47,38 @@ def get_api_answer(current_timestamp):
         api_answer = requests.get(ENDPOINT, headers=HEADERS, params=params)
 
         if api_answer.status_code != 200:
-            raise Exception("Сбой при запросе к эндпоинту")
+            raise Exception('Сбой при запросе к эндпоинту')
 
         return api_answer.json()
 
     except Exception as error:
         logging.error(error)
-        raise Exception("Сбой при запросе к эндпоинту")
+        raise Exception('Сбой при запросе к эндпоинту')
 
 
 def check_response(response):
-    """Проверяет ответ API на корректность"""
+    """Проверяет ответ API на корректность."""
     try:
         homeworks = response['homeworks']
 
         if type(homeworks) != list:
-            raise KeyError("Под ключом `homeworks` домашки приходят не в виде списка в ответ от API")
+            raise KeyError(
+                'Под ключом `homeworks` домашки приходят'
+                'не в виде списка в ответ от API'
+            )
 
         return homeworks
 
     except KeyError:
         logging.error(KeyError)
-        raise KeyError("Отсутствуют ожидаемые ключи в ответе API")
-
+        raise KeyError('Отсутствуют ожидаемые ключи в ответе API')
 
 
 def parse_status(homework):
-    """Извлекает из информации о конкретной домашней работе статус этой работы"""
+    """
+    Извлекает из информации о конкретной домашней работе
+    статус этой работы
+    """
     try:
         homework_name = homework['homework_name']
         homework_status = homework['status']
@@ -83,19 +88,20 @@ def parse_status(homework):
 
     except KeyError:
         logging.error(KeyError)
-        raise KeyError("Недокументированный статус в ответе API")
-        
-    
+        raise KeyError('Недокументированный статус в ответе API')
 
 
 def check_tokens():
-    """Проверяет доступность переменных окружения, которые необходимы для работы программы"""
+    """
+    Проверяет доступность переменных окружения,
+    которые необходимы для работы программы
+    """
     if TELEGRAM_TOKEN and PRACTICUM_TOKEN and TELEGRAM_CHAT_ID:
         a = True
     else:
         a = False
         logging.critical('Отсутствуют обязательные переменные')
-    
+
     return a
 
 
@@ -103,7 +109,7 @@ def main():
     """Основная логика работы бота."""
     current_timestamp = int(time.time())
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    set_errors = ["test_error"]
+    set_errors = ['test_error']
 
     while True:
         try:
