@@ -28,14 +28,26 @@ HOMEWORK_STATUSES = {
 }
 
 
+class StatusCodeError(Exception):
+    pass
+
+
+class MessageError(Exception):
+    pass
+
+
+class APIError(Exception):
+    pass
+
+
 def send_message(bot, message):
     """Отправляет сообщение в телеграм."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logging.info('Сообщение отправлено')
-    except Exception as error:
+    except telegram.error.TelegramError as error:
         logging.error(error)
-        raise Exception('Не удалось отправить сообщение')
+        raise MessageError('Не удалось отправить сообщение')
 
 
 def get_api_answer(current_timestamp):
@@ -47,31 +59,32 @@ def get_api_answer(current_timestamp):
         api_answer = requests.get(ENDPOINT, headers=HEADERS, params=params)
 
         if api_answer.status_code != 200:
-            raise Exception('Сбой при запросе к эндпоинту')
+            logging.error(StatusCodeError)
+            raise StatusCodeError('Сбой при запросе к эндпоинту')
 
         return api_answer.json()
 
-    except Exception as error:
+    except requests.RequestException as error:
         logging.error(error)
-        raise Exception('Сбой при запросе к эндпоинту')
+        raise requests.RequestException('Сбой при запросе к эндпоинту')
 
 
 def check_response(response):
     """Проверяет ответ API на корректность."""
-    try:
-        homeworks = response['homeworks']
+    homeworks = response['homeworks']
 
-        if type(homeworks) != list:
-            raise KeyError(
-                'Под ключом `homeworks` домашки приходят'
-                'не в виде списка в ответ от API'
-            )
+    if type(homeworks) != list:
+        logging.error(APIError)
+        raise APIError(
+            'Под ключом `homeworks` домашки приходят'
+            'не в виде списка в ответ от API'
+        )
 
-        return homeworks
+    if 'homeworks' not in response.keys():
+        logging.error(APIError)
+        raise APIError('Отсутствует ключ \'homeworks\'')
 
-    except KeyError:
-        logging.error(KeyError)
-        raise KeyError('Отсутствуют ожидаемые ключи в ответе API')
+    return homeworks
 
 
 def parse_status(homework):
@@ -97,12 +110,7 @@ def check_tokens():
     которые необходимы для работы программы
     """
     if TELEGRAM_TOKEN and PRACTICUM_TOKEN and TELEGRAM_CHAT_ID:
-        a = True
-    else:
-        a = False
-        logging.critical('Отсутствуют обязательные переменные')
-
-    return a
+        return True
 
 
 def main():
