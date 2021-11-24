@@ -29,14 +29,20 @@ HOMEWORK_STATUSES = {
 
 
 class StatusCodeError(Exception):
+    """Собственный класс ошибки."""
+
     pass
 
 
 class MessageError(Exception):
+    """Собственный класс ошибки."""
+
     pass
 
 
 class APIError(Exception):
+    """Собственный класс ошибки."""
+
     pass
 
 
